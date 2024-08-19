@@ -1,7 +1,6 @@
 import requests
 import urllib3
-import os
-os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
+
 
 # Suppress only the InsecureRequestWarning
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

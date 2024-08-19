@@ -5,7 +5,7 @@ import time
 import threading
 import json
 
-app = Flask("SMSPoolChecker")
+app = Flask("YourTiniWorkers")
 
 CID = "SMSPOOL"
 CIDIDX = "TEMP"
@@ -40,9 +40,12 @@ def check_status():
             result = data['result']
             return {"status": status, "result": result}
 
+@app.route("/")
+def index():
+    return render_template("index.html")
 
 @app.route("/smspool")
-def index():
+def smspool():
     slist = get_service_list()
     return render_template("smspool.html", options=slist)
 
@@ -92,4 +95,4 @@ def runit():
 if __name__ == '__main__':
     import os
     os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
-    app.run("0.0.0.0", 8000)
+    app.run("0.0.0.0", 8000, debug=True)
