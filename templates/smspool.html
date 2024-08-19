@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SMSPOOL MIN-PRICE</title>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        /* Basic styles for the progress bar */
+        #progressBarContainer {
+            width: 100%;
+            background-color: #f3f3f3;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-top: 20px;
+            display: none; /* Initially hidden */
+        }
+        #progressBar {
+            width: 0%;
+            height: 30px;
+            background-color: #4caf50;
+            text-align: center;
+            color: white;
+            line-height: 30px; /* Center the text vertically */
+            border-radius: 5px;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#selectionBox').select2();
+        });
+
+        var mytimer = undefined;
+
+        function progress_checker(reqid) {
+            $.ajax({
+                url: '/smspool/check',
+                type: 'GET',
+                data: { reqid: reqid },
+                success: function(response) {
+                    if (response.status) {
+                        $('#progressBar').width(response.status + '%');
+                        $('#progressBar').text(response.status + '%');
+                        console.log(response.status);
+                        if (response.status == 100) {
+                            clearInterval(mytimer);
+                            $('#progressBar').text('Completed');
+                            $('#progressbar').hide(); // Hide progress bar when done
+                            $('#result').text(response.result);
+                        }
+                    } else {
+                        alert('An error occurred while checking progress.');
+                    }
+                },
+                error: function() {
+                    alert('An error occurred.');
+                }
+            });
+        }
+
+        function submitSelection() {
+            var selectedOption = $('#selectionBox').val();
+            var cacheignore = $('#ignorecache').is(':checked');
+            cacheignore = cacheignore ? 1 : 0;
+            $('#progressBarContainer').show(); // Show the progress bar container
+            $('#progressBar').width('0%'); // Reset progress bar
+            $('#progressBar').text('0%'); // Reset progress text
+            $.ajax({
+                url: '/smspool/run',
+                type: 'POST',
+                data: { selectedOption: selectedOption, "ignorecache" :  cacheignore},
+                success: function(response) {
+                    if (response.taskid) {
+                        mytimer = setInterval(progress_checker, 1000, response.taskid);
+                    } else {
+                        alert('No task ID returned for the selected option.');
+                    }
+                },
+                error: function() {
+                    alert('An error occurred.');
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>Select a service to get the minimum price</h1>
+    <select id="selectionBox" style="width: 300px;">
+        {% for option in options %}
+            <option value="{{ option.ID }}">{{ option.name }}</option>
+        {% endfor %}
+    </select>
+    <button onclick="submitSelection()">Submit</button> <input type="checkbox" id="ignorecache" name="ignorecache" ></input> Ignore cache
+    <div id="result"></div>
+    <div id="progressBarContainer">
+        <div id="progressBar">0%</div>
+    </div>
+</body>
+</html>
